@@ -1,0 +1,14 @@
+PRAGMA foreign_keys = ON;
+
+CREATE TABLE Servers (
+	ServerID INTEGER NOT NULL PRIMARY KEY,
+	ServerName VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE RenxStats (
+	StatsEntry INTEGER NOT NULL PRIMARY KEY,
+	Servers_ServerID INTEGER NOT NULL,
+	RecordingTime DATETIME NOT NULL,
+	PlayersInServer INTEGER NOT NULL DEFAULT(0),
+	FOREIGN KEY( Servers_ServerID ) REFERENCES Servers(ServerID)
+);
