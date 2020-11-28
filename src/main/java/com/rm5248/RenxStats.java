@@ -6,6 +6,7 @@ import com.owlike.genson.Genson;
 import com.rm5248.json.ServerInformation;
 import com.rm5248.renxstats.generated.Tables;
 import com.rm5248.renxstats.generated.tables.records.RenxstatsRecord;
+import com.rm5248.renxstats.generated.tables.records.ServersRecord;
 import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.Response;
@@ -74,32 +75,26 @@ public class RenxStats {
             m_context.transaction( configuration -> {
                 for( ServerInformation i : servers ){
                     logger.debug( "Server name: {} Players: {}", i.Name, i.Players);
-
-                    DSL.using( configuration )
-                            .insertInto( Tables.SERVERS, Tables.SERVERS.SERVERNAME )
-                            .values( i.Name )
-                            .onDuplicateKeyIgnore()
-                            .execute();
                     
-                    Integer id = DSL.using( configuration )
-                            .select( Tables.SERVERS.SERVERID )
-                            .from( Tables.SERVERS )
+                    ServersRecord serversRec = DSL.using( configuration )
+                            .selectFrom( Tables.SERVERS )
                             .where( Tables.SERVERS.SERVERNAME.eq( i.Name ) )
-                            .fetchAny().value1();
+                            .fetchAny();
+                    
+                    if( serversRec == null ){
+                        serversRec = DSL.using( configuration )
+                                .newRecord( Tables.SERVERS );
+                        serversRec.setServername( i.Name );
+                        serversRec.store();
+                    }
 
                     // Insert a value into our reading table so we know how many people are in the server
                     RenxstatsRecord newrec = DSL.using( configuration )
                             .newRecord( Tables.RENXSTATS );
                     newrec.setPlayersinserver( i.Players );
                     newrec.setRecordingtime( now );
-                    newrec.setServersServerid( id );
+                    newrec.setServersServerid( serversRec.getServerid() );
                     newrec.store();
-                }
-            });
-            
-            m_context.transaction( configuration -> {
-                for( ServerInformation i : servers ){
-                  
                 }
             });
         
